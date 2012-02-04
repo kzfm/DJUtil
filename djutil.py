@@ -71,7 +71,7 @@ def main(stdscr):
 
                 tail_music = None
             else:
-                stdscr.addstr("%s / %s -> [] / []" % (head_music.title,head_music.artist))
+                stdscr.addstr("%s / %s -> [] / []" % (head_music.title.encode('utf-8'),head_music.artist.encode('utf-8')))
                 stdscr.move(y, 0)
                 
         elif c == ord('t'):
@@ -95,7 +95,7 @@ def main(stdscr):
                     session.add(mg)
                     session.commit()
 
-                stdscr.addstr("%s / %s -> %s / %s" % (head_music.title,head_music.artist,tail_music.title,tail_music.artist))
+                stdscr.addstr("%s / %s -> %s / %s" % (head_music.title.encode('utf-8'),head_music.artist.encode('utf-8'),tail_music.title.encode('utf-8'),tail_music.artist.encode('utf-8')))
                 stdscr.move(y+1, 0)
                 tail_music = None
 
