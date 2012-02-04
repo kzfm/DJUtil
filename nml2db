@@ -1,0 +1,71 @@
+#!/usr/bin/env python
+# -*- encoding:utf-8 -*-
+
+# kzfm <kerolinq@gmail.com>
+from xml.etree.ElementTree import *
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine,Column,Integer,String,ForeignKey,UniqueConstraint
+from sqlalchemy.orm import scoped_session,sessionmaker
+from optparse import OptionParser
+import os
+
+database_file = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'djutil.db')
+engine = create_engine('sqlite:///'+database_file)
+Session = scoped_session(sessionmaker(autocommit=False,
+                                      autoflush=False,
+                                      bind=engine))
+Base = declarative_base(bind=engine)
+
+class Music(Base):
+    __tablename__ = 'music'
+    __table_args__ = (UniqueConstraint('title','artist'),{})
+    id = Column(Integer, primary_key=True)
+    title  = Column(String(128))
+    artist = Column(String(128))
+                     
+class Graph(Base):
+    __tablename__ = 'graph'
+    __table_args__ = (UniqueConstraint('head','tail'),{})
+    id = Column(Integer, primary_key=True)
+    head = Column(Integer, ForeignKey('music.id'))
+    tail = Column(Integer, ForeignKey('music.id'))
+
+def main():
+    parser = OptionParser()
+    parser.add_option("-i", "--input", dest="nmlfile",
+                      help="import from Traktor nml-file", metavar="NML")
+    (options, args) = parser.parse_args()
+    if options.nmlfile == None:
+        parser.error("need nmlfile")
+
+    session = Session()
+    elem = parse(options.nmlfile).getroot() 
+    head = None
+    tail = None
+
+    for e in elem.findall(".//ENTRY"):
+        if e.get("TITLE") is not None:
+            artist = e.get("ARTIST")
+            title  = e.get("TITLE")
+            track = session.query(Music).filter(Music.artist == artist) \
+                                             .filter(Music.title == title) \
+                                             .first()                       
+            if track == None:
+                track = Music(artist=artist,title=title)
+                session.add(track)
+                session.commit()
+
+            if head != None:
+                mg = session.query(Graph).filter(Graph.head == head.id) \
+                                             .filter(Graph.tail == track.id) \
+                                             .first()
+                if mg == None:
+                    mg = Graph(head=head.id,tail=track.id)
+                    session.add(mg)
+                    session.commit()
+                head = track
+            else:
+                head = track
+
+if __name__ == '__main__':
+    main()
