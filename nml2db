@@ -42,30 +42,42 @@ def main():
     elem = parse(options.nmlfile).getroot() 
     head = None
     tail = None
+    mdic = {}
 
     for e in elem.findall(".//ENTRY"):
         if e.get("TITLE") is not None:
-            artist = e.get("ARTIST")
-            title  = e.get("TITLE")
-            track = session.query(Music).filter(Music.artist == artist) \
-                                             .filter(Music.title == title) \
-                                             .first()                       
+            el = e.find("LOCATION")
+            key = el.get("VOLUME") + el.get("DIR") + el.get("FILE")
+            mdic[key] = { "title": e.get("TITLE"),
+                          "artist": e.get("ARTIST")}
+
+    for e in elem.findall(".//PRIMARYKEY"):
+        if e.get("KEY") is not None:
+            s = mdic[e.get("KEY")]
+            artist = s["artist"]
+            title  = s["title"]
+
+            track = session.query(Music).filter_by(artist = artist)\
+                                        .filter_by(title = title)\
+                                        .first()                       
             if track == None:
                 track = Music(artist=artist,title=title)
                 session.add(track)
                 session.commit()
 
             if head != None:
-                mg = session.query(Graph).filter(Graph.head == head.id) \
-                                             .filter(Graph.tail == track.id) \
-                                             .first()
+                mg = session.query(Graph).filter_by(head = head.id)\
+                                         .filter_by(tail = track.id)\
+                                         .first()
                 if mg == None:
                     mg = Graph(head=head.id,tail=track.id)
+                    print u"{}({}) -> {}({})".format(head.title,
+                                                    head.artist,
+                                                    track.title,
+                                                    track.artist)
                     session.add(mg)
                     session.commit()
-                head = track
-            else:
-                head = track
+            head = track
 
 if __name__ == '__main__':
     main()

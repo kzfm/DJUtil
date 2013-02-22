@@ -13,8 +13,10 @@ for e in elem.findall(".//ENTRY"):
     if e.get("TITLE") is not None:
         el = e.find("LOCATION")
         key = el.get("VOLUME") + el.get("DIR") + el.get("FILE")
-        mdic[key] = e.get("TITLE").encode('utf-8') + " / " + e.get("ARTIST").encode('utf-8')
+        mdic[key] = "    {} / {}".format(
+            e.get("TITLE").encode('utf-8'),
+            e.get("ARTIST").encode('utf-8'))
 
 for e in elem.findall(".//PRIMARYKEY"):
     if e.get("KEY") is not None:
-        print "    {}".format(mdic[e.get("KEY")])
+        print mdic[e.get("KEY")]
